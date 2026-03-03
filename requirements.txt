@@ -1,0 +1,31 @@
+# Data
+pandas==2.2.0
+numpy==1.26.4
+faker==22.0.0
+
+# ML
+scikit-learn==1.4.0
+xgboost==2.0.3
+torch==2.2.0
+
+# API
+fastapi==0.109.0
+uvicorn==0.27.0
+pydantic==2.6.0
+
+# Database
+sqlalchemy==2.0.25
+psycopg2-binary==2.9.9
+
+# Agent / LLM
+anthropic==0.18.1
+
+# Viz / Notebook
+jupyter==1.0.0
+matplotlib==3.8.2
+seaborn==0.13.2
+
+# Utils
+python-dotenv==1.0.1
+loguru==0.7.2
+pytest==8.0.0

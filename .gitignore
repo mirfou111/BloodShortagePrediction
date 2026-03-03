@@ -1,0 +1,20 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Data (trop lourde pour Git)
+data/raw/
+data/processed/
+data/models/
+
+# Environnement
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
