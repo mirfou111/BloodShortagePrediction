@@ -15,7 +15,7 @@ pydantic==2.6.0
 
 # Database
 sqlalchemy==2.0.25
-psycopg2-binary==2.9.9
+psycopg[binary]==3.3.3
 
 # Agent / LLM
 anthropic==0.18.1
