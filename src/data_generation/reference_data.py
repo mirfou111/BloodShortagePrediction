@@ -130,16 +130,16 @@ PRODUCT_DEMAND_RATIO = {
 
 # Seuils minimaux de stock (en unités) selon la taille de l'hôpital
 MINIMUM_THRESHOLDS = {
-    "grand": {"CGR": 50, "PFC": 20, "CPA": 10, "CPD": 5},
-    "moyen": {"CGR": 25, "PFC": 10, "CPA": 5,  "CPD": 2},
-    "petit": {"CGR": 10, "PFC": 5,  "CPA": 3,  "CPD": 1},
+    "grand": {"CGR": 12, "PFC": 8,  "CPA": 3,  "CPD": 3},
+    "moyen": {"CGR": 6,  "PFC": 4,  "CPA": 2,  "CPD": 2},
+    "petit": {"CGR": 3,  "PFC": 2,  "CPA": 1,  "CPD": 1},
 }
 
 # Stock initial selon la taille de l'hôpital (en unités par groupe/produit)
 INITIAL_STOCK = {
-    "grand": {"CGR": 80, "PFC": 35, "CPA": 20, "CPD": 8},
-    "moyen": {"CGR": 40, "PFC": 18, "CPA": 10, "CPD": 4},
-    "petit": {"CGR": 15, "PFC": 8,  "CPA": 5,  "CPD": 2},
+    "grand": {"CGR": 120, "PFC": 100, "CPA": 30, "CPD": 15},
+    "moyen": {"CGR": 60,  "PFC": 50,  "CPA": 15, "CPD": 8},
+    "petit": {"CGR": 25,  "PFC": 20,  "CPA": 8,  "CPD": 4},
 }
 
 

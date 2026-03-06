@@ -47,8 +47,8 @@ BASE_DAILY_DONATIONS = {
 
 # Transfusions quotidiennes de base par taille d'hôpital
 BASE_DAILY_TRANSFUSIONS = {
-    "grand": 20,
-    "moyen": 10,
+    "grand": 22,
+    "moyen": 11,
     "petit": 4,
 }
 
@@ -216,7 +216,6 @@ def generate_all_data():
         products    = [pt.value for pt in ProductType]
 
         # ── Étape 2 : initialiser les stocks ──────────
-        # stock_state[hospital_id][blood_type][product] = quantité actuelle
         stock_state = {}
 
         for hospital in hospitals:
@@ -225,9 +224,13 @@ def generate_all_data():
             for bt in blood_types:
                 stock_state[hospital.id][bt] = {}
                 for prod in products:
-                    # Stock initial pondéré par la distribution sanguine
-                    base = init[prod] * BLOOD_TYPE_DISTRIBUTION[bt]
-                    stock_state[hospital.id][bt][prod] = max(1, int(base))
+                    # CORRECTION : stock minimum garanti par groupe
+                    # On ne multiplie plus par la distribution (trop petit pour les rares)
+                    # On applique juste un facteur de rareté relatif
+                    rarity_factor = BLOOD_TYPE_DISTRIBUTION[bt] / max(BLOOD_TYPE_DISTRIBUTION.values())
+                    # Minimum garanti de 5 unités même pour les groupes rares
+                    base = max(5, int(init[prod] * rarity_factor))
+                    stock_state[hospital.id][bt][prod] = base
 
         # ── Étape 3 : boucle temporelle ───────────────
         total_days = (END_DATE - START_DATE).days + 1
@@ -247,15 +250,19 @@ def generate_all_data():
                     current_date, hospital.region, events
                 )
 
-                # ── Dons du jour ──────────────────────
+                # ── Dons du jour ──────────────────────────────
                 base_don = BASE_DAILY_DONATIONS[hospital.capacity_level]
                 total_dons_today = add_noise(base_don * donation_mult)
                 dons_by_bt = distribute_by_blood_type(total_dons_today)
 
                 for bt, don_qty in dons_by_bt.items():
+                    # CORRECTION : garantir au moins 1 don pour les groupes rares
+                    # quand le stock tombe sous le seuil critique
+                    threshold = MINIMUM_THRESHOLDS[hospital.capacity_level]["CGR"]
+                    if stock_state[hospital.id][bt]["CGR"] < threshold:
+                        don_qty = max(don_qty, 1)
+
                     if don_qty > 0:
-                        # Chaque don est enregistré comme CGR principalement
-                        # (une poche = principalement CGR)
                         batch_dons.append(Don(
                             hospital_id=hospital.id,
                             blood_type=bt,
@@ -263,11 +270,10 @@ def generate_all_data():
                             quantity=don_qty,
                             collection_type=random.choice(["fixe", "mobile"]),
                         ))
-                        # Mise à jour du stock
                         stock_state[hospital.id][bt]["CGR"] += don_qty
-                        stock_state[hospital.id][bt]["PFC"] += int(don_qty * 0.8)
-                        stock_state[hospital.id][bt]["CPA"] += int(don_qty * 0.4)
-                        stock_state[hospital.id][bt]["CPD"] += int(don_qty * 0.1)
+                        stock_state[hospital.id][bt]["PFC"] += max(1, int(don_qty * 0.6))
+                        stock_state[hospital.id][bt]["CPA"] += max(1, int(don_qty * 0.25))
+                        stock_state[hospital.id][bt]["CPD"] += max(1, int(don_qty * 0.15))
 
                 # ── Transfusions du jour ──────────────
                 base_transf = BASE_DAILY_TRANSFUSIONS[hospital.capacity_level]
@@ -303,7 +309,10 @@ def generate_all_data():
                 if day_idx % MAX_SHELF_LIFE == 0:
                     for bt in blood_types:
                         for prod in products:
-                            expired = int(stock_state[hospital.id][bt][prod] * 0.05)
+                            expired = max(0, int(stock_state[hospital.id][bt][prod] * (1 / MAX_SHELF_LIFE)))
+                            stock_state[hospital.id][bt][prod] = max(
+                                0, stock_state[hospital.id][bt][prod] - expired
+                            )
                             stock_state[hospital.id][bt][prod] = max(
                                 0,
                                 stock_state[hospital.id][bt][prod] - expired
