@@ -1,0 +1,28 @@
+# render.yaml
+# Décrit toute l'infrastructure à Render en un seul fichier
+# Render lit ce fichier et crée automatiquement les services
+
+services:
+  # ── Service FastAPI ──────────────────────────
+  - type: web
+    name: bloodflow-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: bash scripts/start.sh
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bloodflow-db
+          property: connectionString
+      - key: ANTHROPIC_API_KEY
+        sync: false   # à renseigner manuellement dans le dashboard Render
+      - key: ENV
+        value: production
+    autoDeploy: true  # redéploie automatiquement à chaque push GitHub
+
+databases:
+  # ── PostgreSQL géré par Render ───────────────
+  - name: bloodflow-db
+    databaseName: bloodflow_db
+    user: bloodflow
+    plan: free

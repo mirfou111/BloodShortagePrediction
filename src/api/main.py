@@ -51,6 +51,9 @@ app = FastAPI(
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
+    # Toutes les URLs Vercel (preview + production)
+    "https://blood-shortage-prediction.vercel.app",
+    "https://blood-shortage-prediction-ousmanendieguene-9879s-projects.vercel.app",
 ]
 
 # En production, on ajoute l'URL Vercel
@@ -66,6 +69,7 @@ if FRONTEND_URL:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=r"https://.*\.vercel\.app",  # ← couvre tous les sous-domaines
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
