@@ -52,7 +52,7 @@ ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
     # Toutes les URLs Vercel (preview + production)
-    "https://blood-shortage-prediction.vercel.app",
+    "https://https://blood-shortage-prediction-84gnevrgk.vercel.app/",
     "https://blood-shortage-prediction-ousmanendieguene-9879s-projects.vercel.app",
 ]
 
