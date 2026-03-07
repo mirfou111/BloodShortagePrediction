@@ -78,10 +78,10 @@ app.add_middleware(
 # Instance unique de l'agent (conserve l'historique de conversation)
 agent_instance = None
 
-def get_agent() -> BloodFlowAgent:
-    """Crée l'agent à la première utilisation (lazy loading)."""
+def get_agent():
     global agent_instance
     if agent_instance is None:
+        from src.agent.llm_agent import BloodFlowAgent
         agent_instance = BloodFlowAgent()
     return agent_instance
 

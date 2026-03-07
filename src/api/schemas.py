@@ -26,8 +26,7 @@ class HospitalResponse(BaseModel):
     capacity_level: str
     has_blood_bank: bool
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
 class StockResponse(BaseModel):
@@ -41,8 +40,7 @@ class StockResponse(BaseModel):
     expiring_soon: int
     status: str   # OK / FAIBLE / CRITIQUE
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
 class PredictionResponse(BaseModel):
