@@ -12,7 +12,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Récupère l'URL de connexion depuis .env
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL", "")
+
+# Render fournit une URL postgresql:// mais SQLAlchemy 2.x
+# avec psycopg2 nécessite postgresql+psycopg2://
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace(
+        "postgresql://", "postgresql+psycopg2://", 1
+    )
 
 # Le moteur : c'est lui qui gère le pool de connexions à PostgreSQL
 # engine = create_engine(
