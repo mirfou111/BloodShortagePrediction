@@ -10,6 +10,7 @@ Organisation :
   /api/network       → vue d'ensemble
 """
 
+import asyncio
 import json
 from datetime import date
 from typing import Optional
@@ -19,7 +20,7 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
-from sqlalchemy import text
+from sqlalchemy import text, inspect
 from sqlalchemy.orm import Session
 
 from .database import get_db, engine
@@ -51,9 +52,7 @@ app = FastAPI(
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
-    # Toutes les URLs Vercel (preview + production)
-    "https://https://blood-shortage-prediction-84gnevrgk.vercel.app/",
-    "https://blood-shortage-prediction.vercel.app/"
+    "https://blood-shortage-prediction.vercel.app",
     "https://blood-shortage-prediction-ousmanendieguene-9879s-projects.vercel.app",
 ]
 
@@ -85,6 +84,54 @@ def get_agent() -> BloodFlowAgent:
     if agent_instance is None:
         agent_instance = BloodFlowAgent()
     return agent_instance
+
+
+# ─────────────────────────────────────────────────────
+# DÉMARRAGE : création tables + génération données
+# ─────────────────────────────────────────────────────
+
+async def generate_data_background():
+    """
+    Génère les données en tâche de fond sans bloquer l'API.
+    Utilise run_in_executor pour ne pas bloquer la boucle asyncio.
+    """
+    from .database import SessionLocal
+    from .models import Hospital as HospitalModel
+    db = SessionLocal()
+    try:
+        count = db.query(HospitalModel).count()
+    finally:
+        db.close()
+
+    if count == 0:
+        logger.info("🏥 Base vide — génération des données en arrière-plan (5-10 min)...")
+        try:
+            loop = asyncio.get_event_loop()
+            from src.data_generation.ode_generator import generate_all_data
+            await loop.run_in_executor(None, generate_all_data)
+            logger.info("✅ Données générées avec succès !")
+        except Exception as e:
+            logger.error(f"❌ Erreur génération données : {e}")
+    else:
+        logger.info(f"✅ Base déjà peuplée ({count} hôpitaux) — skip génération")
+
+
+@app.on_event("startup")
+async def startup_event():
+    """
+    Exécuté automatiquement au démarrage de FastAPI.
+    1. Crée les tables SQLAlchemy si elles n'existent pas
+    2. Lance la génération de données en arrière-plan si la base est vide
+    """
+    logger.info("🚀 Démarrage BloodFlow API...")
+
+    # Créer toutes les tables définies dans models.py
+    from .models import Base
+    Base.metadata.create_all(bind=engine)
+    logger.info("📦 Tables créées / vérifiées")
+
+    # Lancer la génération sans bloquer le démarrage
+    asyncio.create_task(generate_data_background())
 
 
 # ─────────────────────────────────────────────────────
