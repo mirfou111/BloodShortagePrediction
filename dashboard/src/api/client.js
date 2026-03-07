@@ -8,9 +8,11 @@
 
 import axios from 'axios'
 
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8000',
-  timeout: 30000,   // 30s (l'agent LLM peut prendre du temps)
+  baseURL: BASE_URL,
+  timeout: 30000,
   headers: { 'Content-Type': 'application/json' }
 })
 

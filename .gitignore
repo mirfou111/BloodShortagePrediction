@@ -12,6 +12,7 @@ data/models/
 
 # Environnement
 .env
+.env.production
 
 # Jupyter
 .ipynb_checkpoints/
