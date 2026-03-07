@@ -22,7 +22,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 from sqlalchemy import text, inspect
 from sqlalchemy.orm import Session
-
+from fastapi.responses import JSONResponse
 from .database import get_db, engine
 from .models import Hospital, Stock, Transfer
 from .schemas import (
@@ -425,23 +425,26 @@ def get_network_summary(db: Session = Depends(get_db)):
 
 # ── Agent conversationnel ─────────────────────────────
 
-@app.post("/api/agent/chat", response_model=ChatResponse)
+@app.post("/api/agent/chat") # On retire , response_model=ChatResponse ici
 def chat_with_agent(request: ChatRequest):
     """
     Endpoint conversationnel — envoie un message à l'agent LLM
     et retourne sa réponse.
-
-    Le paramètre reset_conversation permet de démarrer
-    une nouvelle conversation (efface l'historique).
     """
     try:
-        agent = get_agent()   # ← remplace agent_instance
+        agent = get_agent()
         if request.reset_conversation:
             agent.reset_conversation()
-        response = agent.chat(request.message)
-        return ChatResponse(response=response)
+        
+        # Appel à l'agent (Anthropic)
+        response_text = agent.chat(request.message)
+        
+        # On retourne un JSONResponse manuel pour éviter le bug de sérialisation Pydantic
+        return JSONResponse(content={"response": response_text})
+        
     except Exception as e:
         logger.error(f"Erreur agent : {e}")
+        # On retourne le détail de l'erreur pour aider au debug
         raise HTTPException(status_code=500, detail=str(e))
 
 
