@@ -13,6 +13,7 @@ Organisation :
 import json
 from datetime import date
 from typing import Optional
+import os
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Depends
@@ -47,17 +48,38 @@ app = FastAPI(
 )
 
 # CORS : permet au frontend React (port 3000) d'appeler l'API (port 8000)
-# Sans ça, le navigateur bloque les requêtes cross-origin
+ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+]
+
+# En production, on ajoute l'URL Vercel
+VERCEL_URL = os.getenv("VERCEL_URL", "")
+if VERCEL_URL:
+    ALLOWED_ORIGINS.append(f"https://{VERCEL_URL}")
+
+# URL frontend explicite si définie
+FRONTEND_URL = os.getenv("FRONTEND_URL", "")
+if FRONTEND_URL:
+    ALLOWED_ORIGINS.append(FRONTEND_URL)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Instance unique de l'agent (conserve l'historique de conversation)
-agent_instance = BloodFlowAgent()
+agent_instance = None
+
+def get_agent() -> BloodFlowAgent:
+    """Crée l'agent à la première utilisation (lazy loading)."""
+    global agent_instance
+    if agent_instance is None:
+        agent_instance = BloodFlowAgent()
+    return agent_instance
 
 
 # ─────────────────────────────────────────────────────
@@ -361,12 +383,11 @@ def chat_with_agent(request: ChatRequest):
     une nouvelle conversation (efface l'historique).
     """
     try:
+        agent = get_agent()   # ← remplace agent_instance
         if request.reset_conversation:
-            agent_instance.reset_conversation()
-
-        response = agent_instance.chat(request.message)
+            agent.reset_conversation()
+        response = agent.chat(request.message)
         return ChatResponse(response=response)
-
     except Exception as e:
         logger.error(f"Erreur agent : {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -374,6 +395,6 @@ def chat_with_agent(request: ChatRequest):
 
 @app.delete("/api/agent/conversation")
 def reset_agent_conversation():
-    """Remet la conversation de l'agent à zéro."""
-    agent_instance.reset_conversation()
+    agent = get_agent()       # ← remplace agent_instance
+    agent.reset_conversation()
     return {"status": "conversation réinitialisée"}
